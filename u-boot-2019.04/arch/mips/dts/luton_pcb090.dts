@@ -1,0 +1,108 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2018 Microsemi Corporation
+ */
+
+/dts-v1/;
+#include "mscc,luton.dtsi"
+
+/ {
+	model = "Luton26 PCB090 Reference Board";
+	compatible = "mscc,luton-pcb090", "mscc,luton";
+
+	aliases {
+		serial0 = &uart0;
+		spi0 = &spi0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		status_green {
+			label = "pcb090:green:status";
+			gpios = <&sgpio 64 GPIO_ACTIVE_HIGH>; /* p0.2 */
+			default-state = "on";
+		};
+
+		status_red {
+			label = "pcb090:red:status";
+			gpios = <&sgpio 65 GPIO_ACTIVE_HIGH>; /* p1.2 */
+			default-state = "off";
+		};
+	};
+};
+
+&sgpio {
+	status = "okay";
+	gpio-ranges = <&sgpio 0 0 96>;
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+	spi-flash@0 {
+		compatible = "spi-flash";
+		spi-max-frequency = <18000000>; /* input clock */
+		reg = <0>; /* CS0 */
+		spi-cs-high;
+	};
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&port0 {
+	phy-handle = <&phy0>;
+};
+
+&port1 {
+	phy-handle = <&phy1>;
+};
+
+&port2 {
+	phy-handle = <&phy2>;
+};
+
+&port3 {
+	phy-handle = <&phy3>;
+};
+
+&port4 {
+	phy-handle = <&phy4>;
+};
+
+&port5 {
+	phy-handle = <&phy5>;
+};
+
+&port6 {
+	phy-handle = <&phy6>;
+};
+
+&port7 {
+	phy-handle = <&phy7>;
+};
+
+&port8 {
+	phy-handle = <&phy8>;
+};
+
+&port9 {
+	phy-handle = <&phy9>;
+};
+
+&port10 {
+	phy-handle = <&phy10>;
+};
+
+&port11 {
+	phy-handle = <&phy11>;
+};
