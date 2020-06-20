@@ -6,6 +6,7 @@ Mainline kernel Orange Pi 3 (Allwinner H6) with USB3, WiFi, Ethernet, PCI-E patc
 * aw-el2-barebone: Allwinner SoCs' 64-bit EL2 barebone hypervisor for PCI-E quirky controller.
 * u-boot-2019.04: Mainline u-boot. (not needed)
 * u-boot-el1-hyp: Patched u-boot with BL31 and hypervisor support for PCI-Eb quirky controller.
+* u-boot-el1-hyp-emmc: Patched u-boot with BL31 and hypervisor support for PCI-Eb quirky controller. Support for boot from EMMC 8GB.
 * linux-5.7.4: Mainline kernel + out of tree patches for USB3, WiFi Ethernet, PCI-E controller.
 
 ### Instructions
@@ -22,10 +23,11 @@ Fix toolchain path in Makefile
 make -j8 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 ```
 
-#### u-boot-el1-hyp
+#### u-boot-el1-hyp-emmc
 
 First copy `bl31.bin` from arm-trusted-firmware and `el2-bb.bin` from aw-el2-barebone and rename it to `hyp.bin`.
 ```bash
+make ARCH=arm CROSS_COMPILE=aarch64-linux-gnu- -j4 orangepi_one_plus_defconfig
 make -j8 ARCH=arm CROSS_COMPILE=aarch64-linux-gnu-
 dd if=u-boot-sunxi-with-spl.bin of=/dev/sdX bs=1024 seek=8
 ```
