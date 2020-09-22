@@ -49,6 +49,16 @@ cp -R linux-5.7.4/output/lib/ /media/ingamedeo/<UUID>/usr/
 cp -R linux-5.7.4/output/usr/ /media/ingamedeo/<UUID>/
 ```
 
+rebuild initrd:
+```bash
+cd /media/ingamedeo/<UUID>/
+mount -t proc proc proc/
+mount -t sysfs sysfs sys/
+mount --bind /dev dev/
+chroot /mnt/ /bin/bash
+update-initramfs -u -k 5.7.4
+```
+
 ### References
 
 * https://lkml.org/lkml/2019/4/5/863
