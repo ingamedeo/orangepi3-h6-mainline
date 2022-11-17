@@ -4,10 +4,13 @@ Mainline kernel Orange Pi 3 (Allwinner H6) with USB3, WiFi, Ethernet, PCI-E patc
 ### Content
 * arm-trusted-firmware: ARM Trusted Firmware-A
 * aw-el2-barebone: Allwinner SoCs' 64-bit EL2 barebone hypervisor for PCI-E quirky controller.
+* u-boot-2022.10: Mainline u-boot with native eMMC support.
 * u-boot-2019.04: Mainline u-boot. (not needed)
 * u-boot-el1-hyp: Patched u-boot with BL31 and hypervisor support for PCI-Eb quirky controller.
 * u-boot-el1-hyp-emmc: Patched u-boot with BL31 and hypervisor support for PCI-Eb quirky controller. Support for boot from EMMC 8GB.
 * linux-5.7.4: Mainline kernel + out of tree patches for USB3, WiFi Ethernet, PCI-E controller.
+* configs: u-boot-2019.04 and linux-5.7.4 configuration files.
+* dts: custom dts for the Orange Pi 3 (adds emac support to mainline dts as of 11/16/2022)
 
 ### Instructions
 
@@ -25,7 +28,7 @@ make -j8 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 
 #### u-boot-el1-hyp-emmc
 
-First copy `bl31.bin` from arm-trusted-firmware and `el2-bb.bin` from aw-el2-barebone and rename it to `hyp.bin`.
+First copy to the u-boot directory the files `bl31.bin` from arm-trusted-firmware and `el2-bb.bin` from aw-el2-barebone and rename the latter to `hyp.bin`.
 ```bash
 make ARCH=arm CROSS_COMPILE=aarch64-linux-gnu- -j4 orangepi_one_plus_defconfig
 make -j8 ARCH=arm CROSS_COMPILE=aarch64-linux-gnu-
@@ -59,6 +62,15 @@ chroot /mnt/ /bin/bash
 update-initramfs -u -k 5.7.4
 ```
 
+### Addendum for mainline kernel 5.19.8 or later (no PCIe support)
+
+To get the Orange Pi 3 to boot on mainline kernel with u-boot-2022.10. The mainline kernel now includes support for ethernet, USB3, eMMC (but no PCIe support):
+* compile arm-trusted-firmware v2.2, move bl31.bin to the u-boot-2022.10 directory.
+* copy dts/sun50i-h6-orangepi-3.dts to u-boot-2022.10/arch/arm/dts/sun50i-h6-orangepi-3.dts
+* compile u-boot-2022.10.
+* extract ArchLinuxARM-aarch64-latest.tar.gz on the SD card.
+* copy u-boot-2022.10/arch/arm/dts/sun50i-h6-orangepi-3.dtb to the SD card at /boot/dtbs/allwinner/sun50i-h6-orangepi-3.dtb
+
 ### References
 
 * https://lkml.org/lkml/2019/4/5/863
@@ -67,5 +79,8 @@ update-initramfs -u -k 5.7.4
 * https://notsyncing.net/?p=blog&b=2016.orangepi-pc-custom-kernel
 * https://forum.armbian.com/topic/13529-a-try-on-utilizing-h6-pcie-with-virtualization/
 * https://megous.com/git/linux/commit/?h=orange-pi-5.7&id=9607a07062fdae6e410d32d4807365c5e542b18d
+* https://linux-sunxi.org/Bootable_eMMC
+* https://oftc.irclog.whitequark.org/linux-sunxi/2022-03-16
+* https://patchwork.kernel.org/project/linux-arm-kernel/patch/20190411101951.30223-6-megous@megous.com/
 
 
