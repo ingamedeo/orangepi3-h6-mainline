@@ -4,3 +4,6 @@
 [submodule "arm-trusted-firmware"]
 	path = arm-trusted-firmware
 	url = https://github.com/ARM-software/arm-trusted-firmware.git
+[submodule "u-boot-2022.10"]
+	path = u-boot-2022.10
+	url = https://github.com/u-boot/u-boot.git
