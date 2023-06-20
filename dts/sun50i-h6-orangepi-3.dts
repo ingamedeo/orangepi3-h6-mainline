@@ -4,7 +4,6 @@
 /dts-v1/;
 
 #include "sun50i-h6.dtsi"
-#include "sun50i-h6-cpu-opp.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 
@@ -13,9 +12,9 @@
 	compatible = "xunlong,orangepi-3", "allwinner,sun50i-h6";
 
 	aliases {
-                ethernet0 = &emac;
 		serial0 = &uart0;
 		serial1 = &uart1;
+		ethernet0 = &emac;
 	};
 
 	chosen {
@@ -44,13 +43,13 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led-0 {
+		power {
 			label = "orangepi:red:power";
 			gpios = <&r_pio 0 4 GPIO_ACTIVE_HIGH>; /* PL4 */
 			default-state = "on";
 		};
 
-		led-1 {
+		status {
 			label = "orangepi:green:status";
 			gpios = <&r_pio 0 7 GPIO_ACTIVE_HIGH>; /* PL7 */
 		};
@@ -63,22 +62,6 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 		regulator-always-on;
-	};
-
-	reg_gmac_2v5: gmac-2v5 {
-		compatible = "regulator-fixed";
-		regulator-name = "gmac-2v5";
-		regulator-min-microvolt = <2500000>;
-		regulator-max-microvolt = <2500000>;
-		startup-delay-us = <100000>;
-		enable-active-high;
-		gpio = <&pio 3 6 GPIO_ACTIVE_HIGH>; /* PD6 */
-
-		/* The real parent of gmac-2v5 is reg_vcc5v, but we need to
-		 * enable two regulators to power the phy. This is one way
-		 * to achieve that.
-		 */
-		vin-supply = <&reg_aldo2>; /* GMAC-3V3 */
 	};
 
 	reg_vcc33_wifi: vcc33-wifi {
@@ -99,6 +82,21 @@
 		regulator-max-microvolt = <1800000>;
 		regulator-always-on;
 		vin-supply = <&reg_vcc33_wifi>;
+	};
+
+	/*
+	 * The board uses 2.5V RGMII signalling. Power sequence to enable
+	 * the phy is to enable GMAC-2V5 and GMAC-3V (aldo2) power rails
+	 * at the same time and to wait 100ms.
+	 */
+	reg_gmac_2v5: gmac-2v5 {
+		compatible = "regulator-fixed";
+		regulator-name = "gmac-2v5";
+		regulator-min-microvolt = <2500000>;
+		regulator-max-microvolt = <2500000>;
+		//startup-delay-us = <100000>;
+		enable-active-high;
+		gpio = <&pio 3 6 GPIO_ACTIVE_HIGH>; /* PD6 */
 	};
 
 	wifi_pwrseq: wifi-pwrseq {
@@ -130,6 +128,24 @@
 	status = "okay";
 };
 
+&emac {
+	pinctrl-names = "default";
+	pinctrl-0 = <&ext_rgmii_pins>;
+	phy-mode = "rgmii";
+	phy-handle = <&ext_rgmii_phy>;
+	/*
+	 * The board uses 2.5V RGMII signalling. Power sequence to enable
+	 * the phy is to enable GMAC-2V5 and GMAC-3V (aldo2) power rails
+	 * at the same time and to wait 100ms. The driver enables phy-io
+	 * first. Delay is achieved with enable-ramp-delay on reg_aldo2.
+	 */
+	phy-supply = <&reg_aldo2>;
+	phy-io-supply = <&reg_gmac_2v5>;
+	allwinner,rx-delay-ps = <1500>;
+	allwinner,tx-delay-ps = <700>;
+	status = "okay";
+};
+
 &gpu {
 	mali-supply = <&reg_dcdcc>;
 	status = "okay";
@@ -142,6 +158,17 @@
 &hdmi_out {
 	hdmi_out_con: endpoint {
 		remote-endpoint = <&hdmi_con_in>;
+	};
+};
+
+&mdio {
+	ext_rgmii_phy: ethernet-phy@1 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <1>;
+
+		reset-gpios = <&pio 3 14 GPIO_ACTIVE_LOW>; /* PD14 */
+		reset-assert-us = <15000>;
+		reset-deassert-us = <40000>;
 	};
 };
 
@@ -186,22 +213,26 @@
 	status = "okay";
 };
 
+&pcie {
+	vcc-supply = <&reg_bldo2>;
+	vdd-supply = <&reg_dcdcd>;
+	slot-supply = <&reg_vcc33_wifi>;
+	perst-gpio = <&pio 6 14 GPIO_ACTIVE_LOW>; /* PG14 */
+	status = "okay";
+};
+
 &pio {
 	vcc-pc-supply = <&reg_bldo2>;
 	vcc-pd-supply = <&reg_cldo1>;
 	vcc-pg-supply = <&reg_vcc_wifi_io>;
 };
 
-&r_ir {
-	status = "okay";
-};
-
-&r_rsb {
+&r_i2c {
 	status = "okay";
 
-	axp805: pmic@745 {
+	axp805: pmic@36 {
 		compatible = "x-powers,axp805", "x-powers,axp806";
-		reg = <0x745>;
+		reg = <0x36>;
 		interrupt-parent = <&r_intc>;
 		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
 		interrupt-controller;
@@ -279,7 +310,6 @@
 				regulator-always-on;
 				regulator-min-microvolt = <800000>;
 				regulator-max-microvolt = <1160000>;
-				regulator-ramp-delay = <2500>;
 				regulator-name = "vdd-cpu";
 			};
 
@@ -287,7 +317,6 @@
 				regulator-enable-ramp-delay = <32000>;
 				regulator-min-microvolt = <810000>;
 				regulator-max-microvolt = <1080000>;
-				regulator-ramp-delay = <2500>;
 				regulator-name = "vdd-gpu";
 			};
 
@@ -310,6 +339,10 @@
 			};
 		};
 	};
+};
+
+&r_ir {
+	status = "okay";
 };
 
 &rtc {
@@ -358,28 +391,7 @@
 };
 
 &usb3phy {
+	phy-supply = <&reg_vcc5v>;
 	status = "okay";
-};
-
-&emac {
-	pinctrl-names = "default";
-	pinctrl-0 = <&ext_rgmii_pins>;
-	phy-mode = "rgmii";
-	phy-handle = <&ext_rgmii_phy>;
-	phy-supply = <&reg_gmac_2v5>;
-	allwinner,rx-delay-ps = <1500>;
-	allwinner,tx-delay-ps = <700>;
-	status = "okay";
-};
-
-&mdio {
-	ext_rgmii_phy: ethernet-phy@1 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <1>;
-
-		reset-gpios = <&pio 3 14 GPIO_ACTIVE_LOW>; /* PD14 */
-		reset-assert-us = <15000>;
-		reset-deassert-us = <40000>;
-	};
 };
 

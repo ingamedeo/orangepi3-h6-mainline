@@ -64,15 +64,6 @@
 		regulator-always-on;
 	};
 
-	reg_gmac_2v5: gmac-2v5 {
-		compatible = "regulator-fixed";
-		regulator-name = "gmac-2v5";
-		regulator-min-microvolt = <2500000>;
-		regulator-max-microvolt = <2500000>;
-		enable-active-high;
-		gpio = <&pio 3 6 GPIO_ACTIVE_HIGH>; /* PD6 */
-	};
-
 	reg_vcc33_wifi: vcc33-wifi {
 		/* Always on 3.3V regulator for WiFi and BT */
 		compatible = "regulator-fixed";
@@ -91,6 +82,21 @@
 		regulator-max-microvolt = <1800000>;
 		regulator-always-on;
 		vin-supply = <&reg_vcc33_wifi>;
+	};
+
+	/*
+	 * The board uses 2.5V RGMII signalling. Power sequence to enable
+	 * the phy is to enable GMAC-2V5 and GMAC-3V (aldo2) power rails
+	 * at the same time and to wait 100ms.
+	 */
+	reg_gmac_2v5: gmac-2v5 {
+		compatible = "regulator-fixed";
+		regulator-name = "gmac-2v5";
+		regulator-min-microvolt = <2500000>;
+		regulator-max-microvolt = <2500000>;
+		//startup-delay-us = <100000>;
+		enable-active-high;
+		gpio = <&pio 3 6 GPIO_ACTIVE_HIGH>; /* PD6 */
 	};
 
 	wifi_pwrseq: wifi-pwrseq {
@@ -122,21 +128,6 @@
 	status = "okay";
 };
 
-&gpu {
-	mali-supply = <&reg_dcdcc>;
-	status = "okay";
-};
-
-&hdmi {
-	status = "okay";
-};
-
-&hdmi_out {
-	hdmi_out_con: endpoint {
-		remote-endpoint = <&hdmi_con_in>;
-	};
-};
-
 &emac {
 	pinctrl-names = "default";
 	pinctrl-0 = <&ext_rgmii_pins>;
@@ -153,6 +144,21 @@
 	allwinner,rx-delay-ps = <1500>;
 	allwinner,tx-delay-ps = <700>;
 	status = "okay";
+};
+
+&gpu {
+	mali-supply = <&reg_dcdcc>;
+	status = "okay";
+};
+
+&hdmi {
+	status = "okay";
+};
+
+&hdmi_out {
+	hdmi_out_con: endpoint {
+		remote-endpoint = <&hdmi_con_in>;
+	};
 };
 
 &mdio {
@@ -207,6 +213,14 @@
 	status = "okay";
 };
 
+&pcie {
+	vcc-supply = <&reg_bldo2>;
+	vdd-supply = <&reg_dcdcd>;
+	slot-supply = <&reg_vcc33_wifi>;
+	perst-gpio = <&pio 6 14 GPIO_ACTIVE_LOW>; /* PG14 */
+	status = "okay";
+};
+
 &pio {
 	vcc-pc-supply = <&reg_bldo2>;
 	vcc-pd-supply = <&reg_cldo1>;
@@ -245,7 +259,6 @@
 				regulator-min-microvolt = <3300000>;
 				regulator-max-microvolt = <3300000>;
 				regulator-name = "vcc33-audio-tv-ephy-mac";
-				regulator-enable-ramp-delay = <100000>;
 			};
 
 			/* ALDO3 is shorted to CLDO1 */
@@ -381,3 +394,4 @@
 	phy-supply = <&reg_vcc5v>;
 	status = "okay";
 };
+
