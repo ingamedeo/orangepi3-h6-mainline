@@ -14,6 +14,14 @@ Mainline kernel Orange Pi 3 (Allwinner H6) with USB3, WiFi, Ethernet, PCI-E patc
 
 ### Instructions
 
+#### Build environment
+* Ubuntu Linux 18.04.6 LTS
+
+The following packages must be installed:
+```
+apt-get install build-essential gcc-aarch64-linux-gnu flex bison libssl1.0-dev python2.7-dev python-minimal swig device-tree-compiler
+```
+
 #### arm-trusted-firmware
 
 ```bash
@@ -21,7 +29,6 @@ make -j8 CROSS_COMPILE=aarch64-linux-gnu- PLAT=sun50i_h6 PRELOADED_BL33_BASE=0x4
 ```
 #### aw-el2-barebone
 
-Fix toolchain path in Makefile
 ```bash
 make -j8 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 ```
@@ -30,7 +37,9 @@ make -j8 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 
 First copy to the u-boot directory the files `bl31.bin` from arm-trusted-firmware and `el2-bb.bin` from aw-el2-barebone and rename the latter to `hyp.bin`.
 ```bash
-make ARCH=arm CROSS_COMPILE=aarch64-linux-gnu- -j4 orangepi_one_plus_defconfig
+cp arm-trusted-firmware/build/sun50i_h6/release/bl31.bin u-boot-el1-hyp-emmc/bl31.bin
+cp aw-el2-barebone/el2-bb.bin u-boot-el1-hyp-emmc/hyp.bin
+cp configs/u-boot-el1-hyp-config u-boot-el1-hyp-emmc/.config
 make -j8 ARCH=arm CROSS_COMPILE=aarch64-linux-gnu-
 dd if=u-boot-sunxi-with-spl.bin of=/dev/sdX bs=1024 seek=8
 ```
@@ -39,7 +48,9 @@ dd if=u-boot-sunxi-with-spl.bin of=/dev/sdX bs=1024 seek=8
 
 Compilation:
 ```bash
+cp configs/linux-5.7.4-config linux-5.7.4/.config
 make -j8 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- dtbs modules
+make -j8 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- INSTALL_MOD_PATH=output modules_install
 make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- INSTALL_MOD_PATH=output headers_install INSTALL_HDR_PATH=output/usr
 ```
