@@ -50,6 +50,7 @@ Compilation:
 ```bash
 cp configs/linux-5.7.4-config linux-5.7.4/.config
 make -j8 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- dtbs modules
+make -j8 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- INSTALL_MOD_PATH=output modules_install
 make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- INSTALL_MOD_PATH=output headers_install INSTALL_HDR_PATH=output/usr
 ```
