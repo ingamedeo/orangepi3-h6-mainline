@@ -64,15 +64,17 @@ cp -R linux-5.7.4/arch/arm64/boot/dts/* /media/ingamedeo/<UUID>/boot/dtbs/
 cp -R linux-5.7.4/output/lib/ /media/ingamedeo/<UUID>/usr/
 cp -R linux-5.7.4/output/usr/ /media/ingamedeo/<UUID>/
 ```
+### Booting from eMMC
 
-rebuild initrd:
+Before you follow these instructions you must have prepared the partition on the eMMC. Create a single partition and format it (mkfs.ext4 -O ^64bit /dev/mmcblk1p1).
+
 ```bash
-cd /media/ingamedeo/<UUID>/
-mount -t proc proc proc/
-mount -t sysfs sysfs sys/
-mount --bind /dev dev/
-chroot /mnt/ /bin/bash
-update-initramfs -u -k 5.7.4
+echo 0 > /sys/block/mmcblk1boot0/force_ro
+echo 0 > /sys/block/mmcblk1boot1/force_ro
+mmc bootbus set single_hs x1 x4 /dev/mmcblk1
+mmc bootpart enable 1 1 /dev/mmcblk1
+dd if=u-boot-sunxi-with-spl.bin of=/dev/mmcblk1boot0 bs=4k
+dd if=u-boot-sunxi-with-spl.bin of=/dev/dev/mmcblk1 bs=1k seek=8
 ```
 
 ### Addendum for mainline kernel 5.19.8 or later (no PCIe support)
