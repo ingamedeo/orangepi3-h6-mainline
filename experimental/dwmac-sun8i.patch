@@ -1,0 +1,82 @@
+--- /tmp/linux-6.3.9-arch1/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.c	2023-06-21 13:44:38.000000000 -0700
++++ ../../linux-6.3.9/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.c	2023-06-22 08:38:26.768918781 -0700
+@@ -69,7 +69,8 @@
+  */
+ struct sunxi_priv_data {
+ 	struct clk *ephy_clk;
+-	struct regulator *regulator;
++	struct regulator *regulator_phy;
++	struct regulator *regulator_phy_io;
+ 	struct reset_control *rst_ephy;
+ 	const struct emac_variant *variant;
+ 	struct regmap_field *regmap_field;
+@@ -570,13 +571,17 @@
+ 	struct sunxi_priv_data *gmac = priv;
+ 	int ret;
+ 
+-	if (gmac->regulator) {
+-		ret = regulator_enable(gmac->regulator);
++		ret = regulator_enable(gmac->regulator_phy_io);
+ 		if (ret) {
+-			dev_err(&pdev->dev, "Fail to enable regulator\n");
++			dev_err(&pdev->dev, "Fail to enable PHY I/O regulator\n");
+ 			return ret;
+ 		}
+-	}
++
++		ret = regulator_enable(gmac->regulator_phy);
++		if (ret) {
++			dev_err(&pdev->dev, "Fail to enable regulator\n");
++			goto err_disable_regulator_phy_io;
++		}
+ 
+ 	if (gmac->use_internal_phy) {
+ 		ret = sun8i_dwmac_power_internal_phy(netdev_priv(ndev));
+@@ -587,8 +592,10 @@
+ 	return 0;
+ 
+ err_disable_regulator:
+-	if (gmac->regulator)
+-		regulator_disable(gmac->regulator);
++		regulator_disable(gmac->regulator_phy);
++
++err_disable_regulator_phy_io:
++	regulator_disable(gmac->regulator_phy_io);
+ 
+ 	return ret;
+ }
+@@ -1035,8 +1042,8 @@
+ 	if (gmac->variant->soc_has_internal_phy)
+ 		sun8i_dwmac_unpower_internal_phy(gmac);
+ 
+-	if (gmac->regulator)
+-		regulator_disable(gmac->regulator);
++	regulator_disable(gmac->regulator_phy);
++	regulator_disable(gmac->regulator_phy_io);
+ }
+ 
+ static void sun8i_dwmac_set_mac_loopback(void __iomem *ioaddr, bool enable)
+@@ -1158,13 +1165,16 @@
+ 	}
+ 
+ 	/* Optional regulator for PHY */
+-	gmac->regulator = devm_regulator_get_optional(dev, "phy");
+-	if (IS_ERR(gmac->regulator)) {
+-		if (PTR_ERR(gmac->regulator) == -EPROBE_DEFER)
+-			return -EPROBE_DEFER;
+-		dev_info(dev, "No regulator found\n");
+-		gmac->regulator = NULL;
+-	}
++	gmac->regulator_phy = devm_regulator_get(dev, "phy");
++	if (IS_ERR(gmac->regulator_phy))
++		return dev_err_probe(dev, PTR_ERR(gmac->regulator_phy),
++				     "Failed to get PHY regulator\n");
++
++	/* Optional regulator for PHY I/O pins */
++	gmac->regulator_phy_io = devm_regulator_get(dev, "phy-io");
++	if (IS_ERR(gmac->regulator_phy_io))
++		return dev_err_probe(dev, PTR_ERR(gmac->regulator_phy_io),
++				     "Failed to get PHY I/O regulator\n");
+ 
+ 	/* The "GMAC clock control" register might be located in the
+ 	 * CCU address range (on the R40), or the system control address
