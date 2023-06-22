@@ -1,0 +1,47 @@
+--- /tmp/linux-6.3.9-arch1/arch/arm64/boot/dts/allwinner/sun50i-h6.dtsi	2023-06-21 13:44:38.000000000 -0700
++++ ../../linux-6.3.9/arch/arm64/boot/dts/allwinner/sun50i-h6.dtsi	2023-06-21 19:44:52.282598893 -0700
+@@ -12,6 +12,8 @@
+ #include <dt-bindings/reset/sun8i-de2.h>
+ #include <dt-bindings/thermal/thermal.h>
+ 
++/memreserve/ 0x40010000 0x00070000;
++
+ / {
+ 	interrupt-parent = <&gic>;
+ 	#address-cells = <1>;
+@@ -780,6 +782,35 @@
+ 			status = "disabled";
+ 		};
+ 
++                pcie: pcie@5400000 {
++                        #address-cells = <3>;
++                        #size-cells = <2>;
++                        compatible = "pine64,allwinner-h6-pcie-wrapped";
++                        reg = <0x05400000 0x4000>,
++                              <0x05410000 0x10000>;
++                        reg-names = "dbi", "config";
++                        device_type = "pci";
++                        bus-range = <0x00 0xff>;
++                        ranges = <0x81000000 0 0          0x05e00000 0 0x00010000 /* downstream I/O */
++                                  0x82000000 0 0x05500000 0x05500000 0 0x00800000>; /* non-prefetchable memory */
++                        num-lanes = <1>;
++                        max-link-speed = <2>;
++                        interrupts = <GIC_SPI 127 IRQ_TYPE_LEVEL_HIGH>,
++                                     <GIC_SPI 126 IRQ_TYPE_LEVEL_HIGH>;
++                        interrupt-names = "msi", "linkup";
++                        clocks = <&ccu CLK_PCIE_REF_OUT>,
++                                 <&ccu CLK_PCIE_MAXI>,
++                                 <&ccu CLK_PCIE_AUX>,
++                                 <&ccu CLK_BUS_PCIE>;
++                        clock-names = "ref", "axi", "aux", "bus";
++                        resets = <&ccu RST_PCIE_POWERUP>, <&ccu RST_BUS_PCIE>;
++                        reset-names = "power", "bus";
++                        #interrupt-cells = <1>;
++                        interrupt-map-mask = <0 0 0 0>;
++                        interrupt-map = <0 0 0 1 &gic GIC_SPI 127 IRQ_TYPE_LEVEL_HIGH>;
++                        status = "disabled";
++                };
++
+ 		hdmi: hdmi@6000000 {
+ 			compatible = "allwinner,sun50i-h6-dw-hdmi";
+ 			reg = <0x06000000 0x10000>;

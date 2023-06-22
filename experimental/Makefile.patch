@@ -1,0 +1,10 @@
+--- /tmp/linux-6.3.9-arch1/drivers/pci/controller/dwc/Makefile	2023-06-21 13:44:38.000000000 -0700
++++ ../../linux-6.3.9/drivers/pci/controller/dwc/Makefile	2023-06-21 19:42:48.698411048 -0700
+@@ -23,6 +23,7 @@
+ obj-$(CONFIG_PCIE_HISI_STB) += pcie-histb.o
+ obj-$(CONFIG_PCI_MESON) += pci-meson.o
+ obj-$(CONFIG_PCIE_TEGRA194) += pcie-tegra194.o
++obj-$(CONFIG_PCIE_SUNXI_WRAPPED) += pcie-sunxi-wrapped.o
+ obj-$(CONFIG_PCIE_UNIPHIER) += pcie-uniphier.o
+ obj-$(CONFIG_PCIE_UNIPHIER_EP) += pcie-uniphier-ep.o
+ obj-$(CONFIG_PCIE_VISCONTI_HOST) += pcie-visconti.o

@@ -1,0 +1,17 @@
+--- /tmp/linux-6.3.9-arch1/drivers/pci/controller/dwc/Kconfig	2023-06-21 13:44:38.000000000 -0700
++++ ../../linux-6.3.9/drivers/pci/controller/dwc/Kconfig	2023-06-21 19:59:10.169740868 -0700
+@@ -331,6 +331,14 @@
+ 	  and therefore the driver re-uses the DesignWare core functions to
+ 	  implement the driver.
+ 
++config PCIE_SUNXI_WRAPPED
++	bool "Wrapped Allwinner SoCs PCIe controllers"
++	depends on PCI_MSI
++	select PCIE_DW_HOST
++	help
++	  Say Y here it you want PCIe controller support on Allwinner H6, wrapped
++	  to a regular PCIe controller by a hypervisor.
++
+ config PCIE_TEGRA194
+ 	tristate
+ 

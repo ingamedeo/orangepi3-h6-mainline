@@ -1,0 +1,185 @@
+--- /tmp/linux-6.3.9-arch1/arch/arm64/boot/dts/allwinner/sun50i-h6-orangepi-3.dts	2023-06-21 13:44:38.000000000 -0700
++++ ../../linux-6.3.9/arch/arm64/boot/dts/allwinner/sun50i-h6-orangepi-3.dts	2023-06-22 08:37:05.528397743 -0700
+@@ -4,7 +4,6 @@
+ /dts-v1/;
+ 
+ #include "sun50i-h6.dtsi"
+-#include "sun50i-h6-cpu-opp.dtsi"
+ 
+ #include <dt-bindings/gpio/gpio.h>
+ 
+@@ -15,6 +14,7 @@
+ 	aliases {
+ 		serial0 = &uart0;
+ 		serial1 = &uart1;
++		ethernet0 = &emac;
+ 	};
+ 
+ 	chosen {
+@@ -43,13 +43,13 @@
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+-		led-0 {
++		power {
+ 			label = "orangepi:red:power";
+ 			gpios = <&r_pio 0 4 GPIO_ACTIVE_HIGH>; /* PL4 */
+ 			default-state = "on";
+ 		};
+ 
+-		led-1 {
++		status {
+ 			label = "orangepi:green:status";
+ 			gpios = <&r_pio 0 7 GPIO_ACTIVE_HIGH>; /* PL7 */
+ 		};
+@@ -64,6 +64,15 @@
+ 		regulator-always-on;
+ 	};
+ 
++	reg_gmac_2v5: gmac-2v5 {
++		compatible = "regulator-fixed";
++		regulator-name = "gmac-2v5";
++		regulator-min-microvolt = <2500000>;
++		regulator-max-microvolt = <2500000>;
++		enable-active-high;
++		gpio = <&pio 3 6 GPIO_ACTIVE_HIGH>; /* PD6 */
++	};
++
+ 	reg_vcc33_wifi: vcc33-wifi {
+ 		/* Always on 3.3V regulator for WiFi and BT */
+ 		compatible = "regulator-fixed";
+@@ -86,7 +95,7 @@
+ 
+ 	wifi_pwrseq: wifi-pwrseq {
+ 		compatible = "mmc-pwrseq-simple";
+-		clocks = <&rtc CLK_OSC32K_FANOUT>;
++		clocks = <&rtc 1>;
+ 		clock-names = "ext_clock";
+ 		reset-gpios = <&r_pio 1 3 GPIO_ACTIVE_LOW>; /* PM3 */
+ 		post-power-on-delay-ms = <200>;
+@@ -128,6 +137,36 @@
+ 	};
+ };
+ 
++
++&emac {
++	pinctrl-names = "default";
++	pinctrl-0 = <&ext_rgmii_pins>;
++	phy-mode = "rgmii-id";
++	phy-handle = <&ext_rgmii_phy>;
++	/*
++	 * The board uses 2.5V RGMII signalling. Power sequence to enable
++	 * the phy is to enable GMAC-2V5 and GMAC-3V (aldo2) power rails
++	 * at the same time and to wait 100ms. The driver enables phy-io
++	 * first. Delay is achieved with enable-ramp-delay on reg_aldo2.
++	 */
++	phy-supply = <&reg_aldo2>;
++	phy-io-supply = <&reg_gmac_2v5>;
++	allwinner,rx-delay-ps = <200>;
++	allwinner,tx-delay-ps = <200>;
++	status = "okay";
++};
++
++&mdio {
++	ext_rgmii_phy: ethernet-phy@1 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <1>;
++
++		reset-gpios = <&pio 3 14 GPIO_ACTIVE_LOW>; /* PD14 */
++		reset-assert-us = <15000>;
++		reset-deassert-us = <40000>;
++	};
++};
++
+ &mmc0 {
+ 	vmmc-supply = <&reg_cldo1>;
+ 	cd-gpios = <&pio 5 6 GPIO_ACTIVE_LOW>; /* PF6 */
+@@ -169,24 +208,28 @@
+ 	status = "okay";
+ };
+ 
++&pcie {
++	vcc-supply = <&reg_bldo2>;
++	vdd-supply = <&reg_dcdcd>;
++	slot-supply = <&reg_vcc33_wifi>;
++	perst-gpio = <&pio 6 14 GPIO_ACTIVE_LOW>; /* PG14 */
++	status = "okay";
++};
++
+ &pio {
+ 	vcc-pc-supply = <&reg_bldo2>;
+ 	vcc-pd-supply = <&reg_cldo1>;
+ 	vcc-pg-supply = <&reg_vcc_wifi_io>;
+ };
+ 
+-&r_ir {
++&r_i2c {
+ 	status = "okay";
+-};
+ 
+-&r_rsb {
+-	status = "okay";
+-
+-	axp805: pmic@745 {
++	axp805: pmic@36 {
+ 		compatible = "x-powers,axp805", "x-powers,axp806";
+-		reg = <0x745>;
++		reg = <0x36>;
+ 		interrupt-parent = <&r_intc>;
+-		interrupts = <GIC_SPI 96 IRQ_TYPE_LEVEL_LOW>;
++		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
+ 		interrupt-controller;
+ 		#interrupt-cells = <1>;
+ 		x-powers,self-working-mode;
+@@ -211,6 +254,7 @@
+ 				regulator-min-microvolt = <3300000>;
+ 				regulator-max-microvolt = <3300000>;
+ 				regulator-name = "vcc33-audio-tv-ephy-mac";
++				regulator-enable-ramp-delay = <100000>;
+ 			};
+ 
+ 			/* ALDO3 is shorted to CLDO1 */
+@@ -262,7 +306,6 @@
+ 				regulator-always-on;
+ 				regulator-min-microvolt = <800000>;
+ 				regulator-max-microvolt = <1160000>;
+-				regulator-ramp-delay = <2500>;
+ 				regulator-name = "vdd-cpu";
+ 			};
+ 
+@@ -270,7 +313,6 @@
+ 				regulator-enable-ramp-delay = <32000>;
+ 				regulator-min-microvolt = <810000>;
+ 				regulator-max-microvolt = <1080000>;
+-				regulator-ramp-delay = <2500>;
+ 				regulator-name = "vdd-gpu";
+ 			};
+ 
+@@ -295,6 +337,10 @@
+ 	};
+ };
+ 
++&r_ir {
++	status = "okay";
++};
++
+ &rtc {
+ 	clocks = <&ext_osc32k>;
+ };
+@@ -314,7 +360,7 @@
+ 
+ 	bluetooth {
+ 		compatible = "brcm,bcm4345c5";
+-		clocks = <&rtc CLK_OSC32K_FANOUT>;
++		clocks = <&rtc 1>;
+ 		clock-names = "lpo";
+ 		device-wakeup-gpios = <&r_pio 1 2 GPIO_ACTIVE_HIGH>; /* PM2 */
+ 		host-wakeup-gpios = <&r_pio 1 1 GPIO_ACTIVE_HIGH>; /* PM1 */
+@@ -341,5 +387,7 @@
+ };
+ 
+ &usb3phy {
++	phy-supply = <&reg_vcc5v>;
+ 	status = "okay";
+ };
++
