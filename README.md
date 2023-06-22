@@ -12,6 +12,8 @@ Mainline kernel Orange Pi 3 (Allwinner H6) with USB3, WiFi, Ethernet, PCI-E patc
 * configs: u-boot-2019.04 and linux-5.7.4 configuration files.
 * dts: custom dts for the Orange Pi 3 (adds emac support to mainline dts as of 11/16/2022)
 
+* **the experimental/ folder contains a new PCIe sunxi module, gmac patches and a dts for newer kernels.**
+
 ### Instructions
 
 #### Build environment
