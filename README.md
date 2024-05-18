@@ -21,7 +21,7 @@ Mainline kernel Orange Pi 3 (Allwinner H6) with USB3, WiFi, Ethernet, PCI-E patc
 
 The following packages must be installed:
 ```
-apt-get install build-essential gcc-aarch64-linux-gnu flex bison libssl1.0-dev python2.7-dev python-minimal swig device-tree-compiler
+apt-get install build-essential gcc-aarch64-linux-gnu flex bison libssl1.0-dev libssl-dev libssl1.1 openssl python2.7-dev python-minimal swig device-tree-compiler
 ```
 
 #### arm-trusted-firmware
